@@ -12,5 +12,6 @@ router.delete('/post/facebook/:post_id', postController.deleteFacebookPost);
 router.post('/post/linkedin', postController.createLinkedinPost);
 router.get('/post/linkedin', postController.getLinkedinAllPostData);
 router.get('/post/linkedin/:post_id', postController.getLinkedinPostData);
+router.delete('/post/linkedin/:post_id', postController.deleteLinkedinPost);
 
 module.exports = router;

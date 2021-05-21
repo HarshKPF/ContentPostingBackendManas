@@ -332,7 +332,6 @@ const postController = {
             };
             request(getOptions)
             .then(postResponse => {
-                // const parsedResponse = JSON.parse(postResponse);
                 /**
                  * Response Example:
                  * Visit this page: https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api?tabs=http#retrieve-ugc-posts
@@ -361,9 +360,9 @@ const postController = {
         }
     },
     /**
-     * Get LinkedIn All Post data 
+     * Get LinkedIn Post data by Id
      **/
-     getLinkedinPostData: async(req, res) => {
+    getLinkedinPostData: async(req, res) => {
         try {
             const {post_id} = req.params;
             const getOptions = {
@@ -379,7 +378,6 @@ const postController = {
             };
             request(getOptions)
             .then(postResponse => {
-                // const parsedResponse = JSON.parse(postResponse);
                 /**
                  * Response Example:
                  * Visit this page: https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api?tabs=http#retrieve-ugc-posts
@@ -406,7 +404,46 @@ const postController = {
                 message: "Something Went Wrong"
             });
         }
+    },
+    /**
+     * Delete LinkedIn Post by Id 
+     **/
+     deleteLinkedinPost: async(req, res) => {
+        try {
+            const {post_id} = req.params;
+            const getOptions = {
+                method: 'DELETE',
+                uri: `${process.env.LINKEDIN_BASE_URL}ugcPosts/urn:li:share:${post_id}`,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.LINKEDIN_ACCESS_TOKEN}`
+                }
+            };
+            request(getOptions)
+            .then(postResponse => {
+                // console.log('delete', postResponse)
+                return res.status(200).send({
+                    status: 200,
+                    message: "Post deleted Successfully",
+                    data: postResponse
+                });
+            })
+            .catch(function (err) {
+                // console.log(err.message, 'err')
+                return res.status(500).send({
+                    status: 500,
+                    message: "Error deleting Post"
+                });
+            });
+        } catch (error) {
+            console.log(error,'error')//Testing
+            return res.status(500).send({
+                status: 500,
+                message: "Something Went Wrong"
+            });
+        }
     }
+    
 }
 
 module.exports = postController;
