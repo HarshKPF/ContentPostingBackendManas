@@ -425,7 +425,6 @@ const postController = {
                 return res.status(200).send({
                     status: 200,
                     message: "Post deleted Successfully",
-                    data: postResponse
                 });
             })
             .catch(function (err) {
