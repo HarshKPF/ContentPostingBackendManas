@@ -205,6 +205,208 @@ const postController = {
             });
         }
     },
+    /**
+     * Posting Text and Image On LinkedIn: For now, Only Text and Article Post Implemented
+     **/
+     createLinkedinPost: async(req, res) => {
+        try {
+            const {
+                post_text,
+                article_link,
+                article_description, 
+                article_title,
+                post_visibility//CONNECTIONS,PUBLIC,LOGGED_IN
+                /**
+                 * CONNECTIONS - Represents 1st degree network of owner.
+                    PUBLIC - Anyone can view this.
+                    LOGGED_IN - Viewable by logged in members only.
+                    CONTAINER - Visibility is delegated to the owner of the container entity. For example, posts within a group are delegated to the groups authorization API for visibility authorization.
+                * */
+            } = req.body;
+            //Validation:To be Done...
+            const postOptions = {
+                method: 'POST',
+                uri: `${process.env.LINKEDIN_BASE_URL}ugcPosts`,
+                body: {
+                    "author": process.env.LINKEDIN_AUTHOR_ID,
+                    "lifecycleState": "PUBLISHED",
+                    "visibility": {
+                        "com.linkedin.ugc.MemberNetworkVisibility": post_visibility
+                    }
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.LINKEDIN_ACCESS_TOKEN}`
+                },
+                json: true
+            };
+            //Text Post
+            var shareMediaCategory = '';
+            var mediaData = [];
+            if(typeof post_text !== "undefined" && typeof article_link === "undefined"){
+                shareMediaCategory = "NONE";
+            }else if(typeof article_link !== "undefined"){//Article Post
+                shareMediaCategory = "ARTICLE";
+                var mediaPayload = {
+                    status: "READY",
+                    originalUrl: article_link
+                };
+                if(typeof article_description !== "undefined"){
+                    mediaPayload.description = {};
+                    mediaPayload.description.text = article_description;
+                }
+                if(typeof article_title !== "undefined"){
+                    mediaPayload.title = {};
+                    mediaPayload.title.text = article_title;
+                }
+                mediaData.push(mediaPayload);
+            }else{
+                //Trow Error
+                return res.status(400).send({
+                    status: 400,
+                    message: "Bad Request"
+                });
+            }
+            postOptions.body.specificContent = {
+                "com.linkedin.ugc.ShareContent": {
+                    "shareCommentary": {
+                        "text": post_text
+                    },
+                    "shareMediaCategory": shareMediaCategory,
+                    "media": mediaData
+                }
+            };
+
+            request(postOptions)
+            .then(postResponse => {
+                /**
+                 * Response Example:
+                 * { id: urn:li:share:6801469454116012032 }
+                 **/
+                 const responsePostId = postResponse.id;
+                 const lastColonIndex = responsePostId.lastIndexOf(":");
+                 const postId = responsePostId.slice(lastColonIndex +1);
+                //Store the Required Data in Database:To be Done...
+                
+                return res.status(200).send({
+                    status: 200,
+                    message: "Content Posted Successfully",
+                    data: {
+                        post_id: postId
+                    }
+                });
+            })
+            .catch(function (err) {
+                // console.log(err.message, 'err')
+                return res.status(500).send({
+                    status: 500,
+                    message: "Error Posting"
+                });
+            });
+        } catch (error) {
+            // console.log(error,'error')//Testing
+            return res.status(500).send({
+                status: 500,
+                message: "Something Went Wrong"
+            });
+        }
+    },
+    /**
+     * Get LinkedIn All Post data 
+     **/
+     getLinkedinAllPostData: async(req, res) => {
+        try {
+            const getOptions = {
+                method: 'GET',
+                uri: `${process.env.LINKEDIN_BASE_URL}ugcPosts`,
+                qs: {
+                    q: "authors",
+                    authors: `List({${process.env.LINKEDIN_AUTHOR_ID}})`,
+                    sortBy: "LAST_MODIFIED",
+                    count: 2
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.LINKEDIN_ACCESS_TOKEN}`
+                }
+            };
+            request(getOptions)
+            .then(postResponse => {
+                // const parsedResponse = JSON.parse(postResponse);
+                /**
+                 * Response Example:
+                 * Visit this page: https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api?tabs=http#retrieve-ugc-posts
+                 **/
+                // console.log(postResponse)
+
+                return res.status(200).send({
+                    status: 200,
+                    message: "Post Data Retrieved Successfully",
+                    data: postResponse
+                });
+            })
+            .catch(function (err) {
+                // console.log(err.message, 'err')
+                return res.status(500).send({
+                    status: 500,
+                    message: "Error Retrieving Post Data"
+                });
+            });
+        } catch (error) {
+            console.log(error,'error')//Testing
+            return res.status(500).send({
+                status: 500,
+                message: "Something Went Wrong"
+            });
+        }
+    },
+    /**
+     * Get LinkedIn All Post data 
+     **/
+     getLinkedinPostData: async(req, res) => {
+        try {
+            const {post_id} = req.params;
+            const getOptions = {
+                method: 'GET',
+                uri: `${process.env.LINKEDIN_BASE_URL}ugcPosts/urn:li:share:${post_id}`,
+                qs: {
+                    viewContext: "AUTHOR"
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.LINKEDIN_ACCESS_TOKEN}`
+                }
+            };
+            request(getOptions)
+            .then(postResponse => {
+                // const parsedResponse = JSON.parse(postResponse);
+                /**
+                 * Response Example:
+                 * Visit this page: https://docs.microsoft.com/en-us/linkedin/marketing/integrations/community-management/shares/ugc-post-api?tabs=http#retrieve-ugc-posts
+                 **/
+                // console.log(postResponse)
+
+                return res.status(200).send({
+                    status: 200,
+                    message: "Post Data Retrieved Successfully",
+                    data: postResponse
+                });
+            })
+            .catch(function (err) {
+                // console.log(err.message, 'err')
+                return res.status(500).send({
+                    status: 500,
+                    message: "Error Retrieving Post Data"
+                });
+            });
+        } catch (error) {
+            console.log(error,'error')//Testing
+            return res.status(500).send({
+                status: 500,
+                message: "Something Went Wrong"
+            });
+        }
+    }
 }
 
 module.exports = postController;
